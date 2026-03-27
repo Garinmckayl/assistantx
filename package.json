@@ -1,0 +1,9 @@
+{
+  "name": "assistantx",
+  "version": "0.1.0",
+  "description": "Zero-config secure AI assistant with Auth0 Token Vault — built for journalists, activists, and lawyers",
+  "private": true,
+  "dependencies": {
+    "@agntor/sdk": "^0.1.0"
+  }
+}

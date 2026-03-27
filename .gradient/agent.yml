@@ -1,0 +1,7 @@
+# Gradient ADK agent configuration
+# Deploy: gradient agent deploy
+# Run locally: gradient agent run
+
+workspace: assistantx-guardrails
+deployment: production
+entrypoint: api/agents/inbound_guard.py
