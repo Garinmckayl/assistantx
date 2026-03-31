@@ -1,0 +1,9 @@
+{
+  "name": "assistantx",
+  "version": "0.1.0",
+  "description": "Managed OpenClaw instances secured by DO Gradient AI agents",
+  "private": true,
+  "dependencies": {
+    "@agntor/sdk": "^0.1.0"
+  }
+}
