@@ -1,0 +1,38 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+dist/
+*.egg-info/
+.coverage
+
+# Dashboard
+dashboard/node_modules/
+dashboard/dist/
+
+# Node (root, for @agntor/sdk)
+node_modules/
+
+# DO credentials
+*.pem
+
+# Internal docs (submission text, video script, etc.)
+docs/
+
+# Docker node compile cache
+docker/node-compile-cache/
+docker/jiti-cache/
+
+# Strategy / ideas (keep private)
+ideas/
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Development screenshots
+deployed-*.png
+current-*.png
+dashboard-snapshot.md
