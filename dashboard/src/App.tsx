@@ -612,6 +612,20 @@ function ServicesScreen() {
 
   useEffect(() => { fetchConnections(); }, [fetchConnections]);
 
+  // Listen for postMessage from Auth0 OAuth callback popup
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'auth0-callback') {
+        if (event.data.success) {
+          fetchConnections();
+        }
+        setConnecting(null);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [fetchConnections]);
+
   const handleConnect = async (serviceId: string) => {
     setConnecting(serviceId);
     try {

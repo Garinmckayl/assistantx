@@ -27,7 +27,9 @@ RUN pip install --no-cache-dir \
     numpy \
     cryptography \
     gradient \
-    gradient-adk
+    gradient-adk \
+    auth0-python \
+    auth0-ai
 
 # Node deps (@agntor/sdk)
 COPY package.json ./

@@ -16,8 +16,11 @@ from __future__ import annotations
 import logging
 import os
 from typing import Optional
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from api.services.token_vault import ConnectionScope, get_vault
@@ -122,14 +125,17 @@ async def authorize_service_simple(body: AuthorizeRequest):
     scopes = body.scopes if body.scopes else default_scopes
 
     if AUTH0_DOMAIN and not vault.demo_mode:
-        auth_url = (
-            f"https://{AUTH0_DOMAIN}/authorize"
-            f"?response_type=code"
-            f"&client_id={AUTH0_CLIENT_ID}"
-            f"&redirect_uri={AUTH0_REDIRECT}"
-            f"&scope={' '.join(scopes)}"
-            f"&connection={connection}"
-        )
+        params = {
+            "response_type": "code",
+            "client_id": AUTH0_CLIENT_ID,
+            "redirect_uri": AUTH0_REDIRECT,
+            "scope": "openid profile email offline_access " + " ".join(scopes),
+            "connection": connection,
+            "access_type": "offline",
+            "prompt": "consent",
+            "state": service,  # pass service name through state for callback
+        }
+        auth_url = f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
         return {
             "authorization_url": auth_url,
             "message": "Redirect user to authorization_url to complete Auth0 OAuth flow.",
@@ -175,6 +181,121 @@ async def revoke_service_simple(body: SimpleRevokeRequest):
 
     # Not found — still return success (idempotent)
     return {"revoked": True, "service": body.service, "note": "No active token found (already revoked)."}
+
+
+@router.get("/callback")
+async def oauth_callback(request: Request):
+    """
+    Auth0 OAuth callback — handles the redirect after user authorizes a connection.
+    Exchanges the authorization code for tokens and stores them in the vault.
+    Renders a self-closing HTML page that notifies the parent dashboard window.
+    """
+    code = request.query_params.get("code")
+    error = request.query_params.get("error")
+    error_description = request.query_params.get("error_description", "")
+    state = request.query_params.get("state", "")
+
+    if error:
+        logger.error("OAuth callback error: %s — %s", error, error_description)
+        return HTMLResponse(content=f"""
+        <html><body>
+        <h2>Authorization Failed</h2>
+        <p>{error_description or error}</p>
+        <script>
+            if (window.opener) {{
+                window.opener.postMessage({{ type: 'auth0-callback', error: '{error}' }}, '*');
+                window.close();
+            }}
+        </script>
+        </body></html>
+        """, status_code=200)
+
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code")
+
+    if not AUTH0_DOMAIN or not AUTH0_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Auth0 not configured on server")
+
+    # Exchange authorization code for tokens
+    client_secret = os.getenv("AUTH0_CLIENT_SECRET", "")
+    token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(token_url, json={
+                "grant_type": "authorization_code",
+                "client_id": AUTH0_CLIENT_ID,
+                "client_secret": client_secret,
+                "code": code,
+                "redirect_uri": AUTH0_REDIRECT,
+            })
+            resp.raise_for_status()
+            token_data = resp.json()
+    except httpx.HTTPStatusError as exc:
+        logger.error("Token exchange failed: %s %s", exc.response.status_code, exc.response.text)
+        return HTMLResponse(content=f"""
+        <html><body>
+        <h2>Token Exchange Failed</h2>
+        <p>Could not exchange authorization code. Please try again.</p>
+        <script>
+            if (window.opener) {{
+                window.opener.postMessage({{ type: 'auth0-callback', error: 'token_exchange_failed' }}, '*');
+                window.close();
+            }}
+        </script>
+        </body></html>
+        """, status_code=200)
+    except Exception as exc:
+        logger.error("Token exchange error: %s", exc)
+        raise HTTPException(status_code=500, detail="Token exchange failed")
+
+    # Store the tokens in Token Vault for the default instance
+    vault = get_vault()
+    access_token = token_data.get("access_token", "")
+    refresh_token = token_data.get("refresh_token", "")
+
+    if refresh_token:
+        vault.store_refresh_token(DEFAULT_INSTANCE, refresh_token)
+    if access_token:
+        vault.store_access_token(DEFAULT_INSTANCE, access_token)
+
+    logger.info(
+        "OAuth callback: stored tokens for default instance (access=%s, refresh=%s)",
+        bool(access_token), bool(refresh_token),
+    )
+
+    # Return a self-closing page that signals the parent dashboard
+    return HTMLResponse(content="""
+    <html><body>
+    <h2 style="font-family: system-ui; color: #10b981;">Connected successfully!</h2>
+    <p style="font-family: system-ui; color: #666;">This window will close automatically.</p>
+    <script>
+        if (window.opener) {
+            window.opener.postMessage({ type: 'auth0-callback', success: true }, '*');
+            setTimeout(() => window.close(), 1500);
+        }
+    </script>
+    </body></html>
+    """, status_code=200)
+
+
+@router.get("/status")
+async def vault_status():
+    """
+    Return the current Token Vault status — mode, Auth0 domain, active connections.
+    Used by the dashboard to display real-time vault state.
+    """
+    vault = get_vault()
+    connections = vault.list_connections(DEFAULT_INSTANCE)
+    detector = get_detector(DEFAULT_INSTANCE)
+
+    return {
+        "token_vault_mode": "auth0" if (AUTH0_DOMAIN and not vault.demo_mode) else "demo",
+        "auth0_domain": AUTH0_DOMAIN or "not configured",
+        "active_connections": len(connections),
+        "connections": connections,
+        "anomaly_detector": detector.summary(),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -266,14 +387,17 @@ async def authorize_service(instance_id: str, body: AuthorizeRequest):
     scopes = body.scopes if body.scopes else default_scopes
 
     if AUTH0_DOMAIN and not vault.demo_mode:
-        auth_url = (
-            f"https://{AUTH0_DOMAIN}/authorize"
-            f"?response_type=code"
-            f"&client_id={AUTH0_CLIENT_ID}"
-            f"&redirect_uri={AUTH0_REDIRECT}"
-            f"&scope={' '.join(scopes)}"
-            f"&connection={connection}"
-        )
+        params = {
+            "response_type": "code",
+            "client_id": AUTH0_CLIENT_ID,
+            "redirect_uri": AUTH0_REDIRECT,
+            "scope": "openid profile email offline_access " + " ".join(scopes),
+            "connection": connection,
+            "access_type": "offline",
+            "prompt": "consent",
+            "state": f"{instance_id}:{service}",
+        }
+        auth_url = f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
         return {
             "action": "redirect",
             "auth_url": auth_url,
