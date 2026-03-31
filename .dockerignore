@@ -1,0 +1,15 @@
+.git
+.env
+.env.example
+.gitignore
+.playwright-mcp
+*.md
+*.png
+node_modules
+dashboard/node_modules
+dashboard/dist
+eval
+docs
+ideas
+__pycache__
+*.pyc
