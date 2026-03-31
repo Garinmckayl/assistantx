@@ -166,21 +166,10 @@ async def revoke_service_simple(body: SimpleRevokeRequest):
         raise HTTPException(status_code=400, detail=f"Unknown service '{body.service}'.")
 
     connection, _ = _SERVICE_MAP[service]
-    cache = vault._cache.get(DEFAULT_INSTANCE, {})
+    removed = vault.revoke_connection(DEFAULT_INSTANCE, connection)
 
-    if connection in cache:
-        del cache[connection]
-        logger.info("Revoked service=%s connection=%s for default instance", service, connection)
-        return {"revoked": True, "service": body.service}
-
-    # Also check by service_id in case stored differently
-    if service in cache:
-        del cache[service]
-        logger.info("Revoked service=%s for default instance", service)
-        return {"revoked": True, "service": body.service}
-
-    # Not found — still return success (idempotent)
-    return {"revoked": True, "service": body.service, "note": "No active token found (already revoked)."}
+    logger.info("Revoked service=%s connection=%s for default instance (found=%s)", service, connection, removed)
+    return {"revoked": True, "service": body.service}
 
 
 @router.get("/callback")
@@ -259,9 +248,15 @@ async def oauth_callback(request: Request):
     if access_token:
         vault.store_access_token(DEFAULT_INSTANCE, access_token)
 
+    # Record the authorized connection using state (service name)
+    service = state.split(":")[0] if ":" in state else state  # handle "instance:service" or "service"
+    if service and service in _SERVICE_MAP:
+        connection, default_scopes = _SERVICE_MAP[service]
+        vault.mark_connection_authorized(DEFAULT_INSTANCE, connection, default_scopes)
+
     logger.info(
-        "OAuth callback: stored tokens for default instance (access=%s, refresh=%s)",
-        bool(access_token), bool(refresh_token),
+        "OAuth callback: stored tokens for default instance (access=%s, refresh=%s, service=%s)",
+        bool(access_token), bool(refresh_token), service,
     )
 
     # Return a self-closing page that signals the parent dashboard

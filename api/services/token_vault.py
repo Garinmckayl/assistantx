@@ -101,6 +101,10 @@ class TokenVaultClient:
         # Token cache: instance_id -> connection -> CachedToken
         self._cache: Dict[str, Dict[str, CachedToken]] = {}
 
+        # Authorized connections via Auth0 OAuth (persists until revoked)
+        # instance_id -> connection -> { scopes, connected_at }
+        self._authorized: Dict[str, Dict[str, Dict]] = {}
+
         # OpenClaw API credentials (stored until first use)
         self._openclaw_creds: Dict[str, Dict[str, str]] = {}
 
@@ -127,6 +131,34 @@ class TokenVaultClient:
         """Store a user's Auth0 access token for vault exchanges."""
         self._access_tokens[instance_id] = access_token
         logger.info("Stored access token for instance=%s", instance_id)
+
+    def mark_connection_authorized(
+        self, instance_id: str, connection: str, scopes: List[str]
+    ) -> None:
+        """Record that a connection was authorized via Auth0 OAuth."""
+        self._authorized.setdefault(instance_id, {})[connection] = {
+            "scopes": scopes,
+            "connected_at": time.time(),
+        }
+        logger.info(
+            "Marked connection=%s as authorized for instance=%s",
+            connection, instance_id,
+        )
+
+    def revoke_connection(self, instance_id: str, connection: str) -> bool:
+        """Revoke an authorized connection."""
+        removed = False
+        auth = self._authorized.get(instance_id, {})
+        if connection in auth:
+            del auth[connection]
+            removed = True
+        cache = self._cache.get(instance_id, {})
+        if connection in cache:
+            del cache[connection]
+            removed = True
+        if removed:
+            logger.info("Revoked connection=%s for instance=%s", connection, instance_id)
+        return removed
 
     def store_openclaw_credentials(
         self, instance_id: str, credentials: Dict[str, str]
@@ -336,12 +368,17 @@ class TokenVaultClient:
         if instance_id in self._openclaw_creds:
             del self._openclaw_creds[instance_id]
             count += 1
+        if instance_id in self._authorized:
+            count += len(self._authorized.pop(instance_id))
         logger.info("Revoked %d token(s)/credential(s) for instance=%s", count, instance_id)
         return count
 
     def list_connections(self, instance_id: str) -> List[Dict]:
         """Return a sanitised list of active connections (no raw tokens)."""
         result = []
+        seen = set()
+
+        # Cached tokens (actively exchanged)
         for connection, cached in self._cache.get(instance_id, {}).items():
             if cached.is_valid:
                 result.append({
@@ -349,7 +386,22 @@ class TokenVaultClient:
                     "scopes": cached.scopes,
                     "expires_in_seconds": max(0, int(cached.expires_at - time.time())),
                     "valid": True,
+                    "source": "cache",
                 })
+                seen.add(connection)
+
+        # Authorized via Auth0 OAuth (may not have cached token yet)
+        for connection, info in self._authorized.get(instance_id, {}).items():
+            if connection not in seen:
+                result.append({
+                    "connection": connection,
+                    "scopes": info.get("scopes", []),
+                    "expires_in_seconds": -1,  # managed by Auth0
+                    "valid": True,
+                    "source": "auth0",
+                })
+                seen.add(connection)
+
         has_openclaw = bool(self._openclaw_creds.get(instance_id))
         if has_openclaw:
             result.append({
@@ -357,6 +409,7 @@ class TokenVaultClient:
                 "scopes": list(self._openclaw_creds[instance_id].keys()),
                 "expires_in_seconds": -1,   # no expiry
                 "valid": True,
+                "source": "local",
             })
         return result
 

@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -186,7 +187,8 @@ async def _forward_to_openclaw(
     Fast path: talk directly to the OpenClaw gateway WebSocket running inside
     the container (port mapped to host). No docker exec overhead — ~2-3s.
 
-    Fallback: docker exec (used if gateway isn't ready yet).
+    Fallback 1: docker exec (used if gateway isn't ready yet).
+    Fallback 2: direct LLM API call via Z.ai / OpenAI-compatible endpoint.
     """
     if gateway_port:
         result = await _call_gateway_ws(
@@ -198,10 +200,14 @@ async def _forward_to_openclaw(
         if result:
             return result
 
-    # Fallback to docker exec
-    if not container_name:
-        return "No agent available for this instance."
-    return await _call_openclaw_docker_exec(content, secrets, instance_id, container_name)
+    # Fallback 1: docker exec
+    if container_name:
+        result = await _call_openclaw_docker_exec(content, secrets, instance_id, container_name)
+        if result and "timed out" not in result.lower() and "no agent" not in result.lower():
+            return result
+
+    # Fallback 2: direct LLM API (Z.ai GLM / OpenAI-compatible)
+    return await _call_llm_direct(content, instance_id)
 
 
 async def _call_gateway_ws(
@@ -477,6 +483,96 @@ async def _call_openclaw_docker_exec(
         logger.error("openclaw docker exec error: %s", exc)
 
     return "Agent timed out. Please try again."
+
+
+# ---------------------------------------------------------------------------
+# Direct LLM fallback — Z.ai GLM / OpenAI-compatible API
+# ---------------------------------------------------------------------------
+
+# Per-session conversation history for direct LLM mode
+_llm_sessions: dict[str, list[dict]] = {}
+
+_LLM_SYSTEM_PROMPT = (
+    "You are AssistantX, a secure AI assistant designed for journalists, activists, "
+    "and lawyers operating under threat. You help with tasks across connected services "
+    "— reading emails, managing calendars, searching documents, and more. "
+    "All interactions are protected by security guardrails. You never see raw user "
+    "credentials — those are held in Auth0 Token Vault and exchanged per-request. "
+    "Be concise, helpful, and security-conscious. If a user asks about capabilities, "
+    "mention that you can work with their connected services (Gmail, Google Drive, "
+    "GitHub, Slack, etc.) once they authorize them in the Services tab."
+)
+
+ZAI_API_KEY = os.getenv("ZAI_API_KEY", "")
+ZAI_BASE_URL = os.getenv("ZAI_BASE_URL", "https://api.z.ai/api/paas/v4")
+ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.5-air")
+
+
+async def _call_llm_direct(content: str, instance_id: str) -> str:
+    """
+    Direct LLM API call using Z.ai GLM (OpenAI-compatible endpoint).
+    Used as the final fallback when OpenClaw gateway is not available.
+    Maintains per-session conversation history.
+    """
+    api_key = ZAI_API_KEY
+    if not api_key:
+        logger.error("No ZAI_API_KEY configured — cannot call LLM directly")
+        return (
+            "I'm currently unable to process messages because no AI model is configured. "
+            "Please contact the administrator to set up the ZAI_API_KEY."
+        )
+
+    session_key = f"llm-{instance_id}"
+    if session_key not in _llm_sessions:
+        _llm_sessions[session_key] = []
+
+    history = _llm_sessions[session_key]
+    history.append({"role": "user", "content": content})
+
+    # Keep history manageable (last 20 messages)
+    if len(history) > 40:
+        history[:] = history[-20:]
+
+    messages = [{"role": "system", "content": _LLM_SYSTEM_PROMPT}] + history
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{ZAI_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": ZAI_MODEL,
+                    "messages": messages,
+                    "temperature": 0.7,
+                    "max_tokens": 2048,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        reply = data["choices"][0]["message"]["content"]
+        history.append({"role": "assistant", "content": reply})
+        logger.info(
+            "Direct LLM response for instance=%s (model=%s, tokens=%s)",
+            instance_id, ZAI_MODEL,
+            data.get("usage", {}).get("total_tokens", "?"),
+        )
+        return reply
+
+    except httpx.HTTPStatusError as exc:
+        logger.error("Z.ai API error: %s %s", exc.response.status_code, exc.response.text[:300])
+        # Remove the failed user message from history
+        if history and history[-1]["role"] == "user":
+            history.pop()
+        return "I encountered an error communicating with the AI model. Please try again."
+    except Exception as exc:
+        logger.error("Direct LLM call failed: %s", exc)
+        if history and history[-1]["role"] == "user":
+            history.pop()
+        return "I had trouble processing that. Please try again."
 
 
 async def proxy_websocket(instance_id: str, websocket: WebSocket, request: Request):
