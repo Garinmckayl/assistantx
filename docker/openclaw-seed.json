@@ -1,0 +1,5 @@
+{
+  "meta": { "lastTouchedVersion": "2026.2.25" },
+  "wizard": { "lastRunAt": "2026-02-26T00:00:00.000Z" },
+  "agents": { "defaults": { "model": { "primary": "google/gemini-2.0-flash" } } }
+}
