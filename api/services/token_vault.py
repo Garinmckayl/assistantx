@@ -353,10 +353,46 @@ class TokenVaultClient:
 
     def revoke_all(self, instance_id: str) -> int:
         """
-        Clear all cached tokens and credentials for an instance.
+        Revoke all cached tokens and credentials for an instance.
         Called as the final step of the Dead-Man Switch protocol.
+
+        1. Revoke refresh token at Auth0's /oauth/revoke endpoint
+        2. Clear all local caches and stored tokens
         """
         count = 0
+
+        # Step 1: Revoke refresh token at Auth0 if we have one
+        refresh_token = self._refresh_tokens.get(instance_id)
+        if refresh_token and not self.demo_mode:
+            try:
+                import httpx
+                resp = httpx.post(
+                    f"https://{self.domain}/oauth/revoke",
+                    json={
+                        "client_id": self.client_id,
+                        "client_secret": self.client_secret,
+                        "token": refresh_token,
+                    },
+                    headers={"Content-Type": "application/json"},
+                    timeout=10,
+                )
+                if resp.status_code == 200:
+                    logger.info(
+                        "Auth0 refresh token revoked remotely for instance=%s",
+                        instance_id,
+                    )
+                else:
+                    logger.warning(
+                        "Auth0 revoke returned %d for instance=%s: %s",
+                        resp.status_code, instance_id, resp.text[:200],
+                    )
+            except Exception as exc:
+                logger.error(
+                    "Auth0 remote revocation failed for instance=%s: %s",
+                    instance_id, exc,
+                )
+
+        # Step 2: Clear all local state
         if instance_id in self._cache:
             count += len(self._cache.pop(instance_id))
         if instance_id in self._refresh_tokens:

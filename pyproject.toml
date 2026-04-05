@@ -20,6 +20,7 @@ gradient = "^0.1.0"
 gradient-adk = "^0.2.0"
 scikit-learn = "^1.5.0"
 numpy = "^1.26.0"
+cryptography = "^43.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

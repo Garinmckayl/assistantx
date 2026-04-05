@@ -337,6 +337,8 @@ class DeadManSwitch:
     async def _push_google_drive(self, dest: SecureDestination, token: str) -> bool:
         """Push encrypted payload to Google Drive using vault-issued token."""
         import json as _json
+        from cryptography.fernet import Fernet
+
         payload = _json.dumps({
             "triggered_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "instance": self.config.instance_id,
@@ -344,21 +346,34 @@ class DeadManSwitch:
             "log": self.status.distribution_log[-10:],
         }, indent=2).encode()
 
+        # Encrypt the payload with a one-time key
+        key = Fernet.generate_key()
+        encrypted_payload = Fernet(key).encrypt(payload)
+
+        # Store the decryption key in the distribution log so trusted contacts
+        # can recover it (the log is sent via Gmail before revocation)
+        self.status.distribution_log.append(
+            f"[{_ts()}]   🔑 Decryption key: {key.decode()}"
+        )
+
         metadata = _json.dumps({
-            "name": f"assistantx-deadman-{time.strftime('%Y%m%d-%H%M%S')}.json",
-            "mimeType": "application/json",
+            "name": f"assistantx-deadman-{time.strftime('%Y%m%d-%H%M%S')}.enc",
+            "mimeType": "application/octet-stream",
         })
 
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(
                     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
-                    headers={"Authorization": f"Bearer {token}"},
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "multipart/related; boundary=boundary",
+                    },
                     content=(
                         b"--boundary\r\nContent-Type: application/json\r\n\r\n" +
                         metadata.encode() +
-                        b"\r\n--boundary\r\nContent-Type: application/json\r\n\r\n" +
-                        payload +
+                        b"\r\n--boundary\r\nContent-Type: application/octet-stream\r\n\r\n" +
+                        encrypted_payload +
                         b"\r\n--boundary--"
                     ),
                 )
@@ -371,16 +386,24 @@ class DeadManSwitch:
         """Push encrypted payload to a GitHub repo using vault-issued token."""
         import base64
         import json as _json
+        from cryptography.fernet import Fernet
 
-        payload = {
+        payload = _json.dumps({
             "triggered_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "instance": self.config.instance_id,
             "files": self.config.encrypt_paths,
             "distribution_log": self.status.distribution_log[-10:],
-        }
-        content = base64.b64encode(
-            _json.dumps(payload, indent=2).encode()
-        ).decode()
+        }, indent=2).encode()
+
+        # Encrypt the payload with a one-time key
+        key = Fernet.generate_key()
+        encrypted_payload = Fernet(key).encrypt(payload)
+
+        self.status.distribution_log.append(
+            f"[{_ts()}]   🔑 GitHub decryption key: {key.decode()}"
+        )
+
+        content = base64.b64encode(encrypted_payload).decode()
 
         # GitHub API — token is vault-issued, not stored on machine
         url = dest.url  # e.g. https://api.github.com/repos/user/repo/contents/deadman.json
@@ -412,7 +435,7 @@ class DeadManSwitch:
         return True  # Simulated for demo
 
     async def _notify_grace(self) -> None:
-        """Notify trusted contacts that the grace period has started."""
+        """Notify trusted contacts that the grace period has started via Gmail API."""
         contacts = [c for c in self.config.trusted_contacts if c.notify_on_grace]
         if not contacts:
             return
@@ -421,21 +444,112 @@ class DeadManSwitch:
             "Notifying %d contact(s) of grace period for instance=%s",
             len(contacts), self.config.instance_id,
         )
-        # In production: send via email API using vault-issued notify token
+
+        # Get Gmail token from vault for grace notifications
+        notify_token = await self._vault.get_gmail_token(self.config.instance_id)
+        if not notify_token:
+            logger.error("No Gmail token available for grace notification")
+            return
+
         for contact in contacts:
             logger.info("GRACE NOTICE → %s <%s>", contact.name, contact.email)
+            await self._send_grace_email(notify_token, contact)
+
+    async def _send_grace_email(self, token: str, contact: TrustedContact) -> bool:
+        """Send a grace period warning email via Gmail API."""
+        import base64
+        from email.mime.text import MIMEText
+
+        subject = f"[WARNING] AssistantX — Missed Check-In for {self.config.instance_id}"
+        body = (
+            f"This is an automated warning from AssistantX.\n\n"
+            f"The user for instance '{self.config.instance_id}' has missed their scheduled check-in.\n"
+            f"The grace period is now active.\n\n"
+            f"Grace period expires at: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime(self.status.grace_expires_at))}\n\n"
+            f"If the user does not check in before the grace period expires, "
+            f"the Dead-Man Switch protocol will activate automatically.\n\n"
+            f"— AssistantX Protocol Engine"
+        )
+
+        message = MIMEText(body)
+        message["to"] = contact.email
+        message["subject"] = subject
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"raw": raw},
+                )
+                return resp.status_code in (200, 201)
+        except Exception as exc:
+            logger.error("Grace email send error: %s", exc)
+            return False
 
     async def _notify_trigger(self, token: str, log: List[str]) -> None:
-        """Notify trusted contacts that the protocol has been triggered."""
+        """Notify trusted contacts that the protocol has been triggered via Gmail API."""
         contacts = [c for c in self.config.trusted_contacts if c.notify_on_trigger]
-        log.append(f"[{_ts()}] Notifying {len(contacts)} trusted contact(s)...")
+        log.append(f"[{_ts()}] Notifying {len(contacts)} trusted contact(s) via Gmail API...")
 
         for contact in contacts:
             log.append(f"[{_ts()}]   → {contact.name} <{contact.email}>")
+            success = await self._send_gmail(token, contact, log)
+            if success:
+                log.append(f"[{_ts()}]   ✓ Email sent to {contact.email}")
+            else:
+                log.append(f"[{_ts()}]   ✗ Email failed for {contact.email}")
             logger.critical(
-                "TRIGGER NOTICE → %s <%s> (token: %s...)",
-                contact.name, contact.email, token[:8],
+                "TRIGGER NOTICE → %s <%s> (sent=%s)",
+                contact.name, contact.email, success,
             )
+
+    async def _send_gmail(
+        self, token: str, contact: TrustedContact, log: List[str]
+    ) -> bool:
+        """Send an email via Gmail API using a vault-issued token."""
+        import base64
+        from email.mime.text import MIMEText
+
+        subject = f"[URGENT] AssistantX Dead-Man Switch Triggered — {self.config.instance_id}"
+        body = (
+            f"This is an automated message from AssistantX.\n\n"
+            f"The Dead-Man Switch for instance '{self.config.instance_id}' has been triggered.\n"
+            f"The user missed their scheduled check-in and the grace period has expired.\n\n"
+            f"Triggered at: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n\n"
+            f"Pre-staged documents have been encrypted and distributed to secure destinations.\n"
+            f"All credentials in Token Vault have been revoked.\n\n"
+            f"If you are authorized to re-arm this switch, please contact the system administrator.\n\n"
+            f"— AssistantX Protocol Engine"
+        )
+
+        message = MIMEText(body)
+        message["to"] = contact.email
+        message["subject"] = subject
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"raw": raw},
+                )
+                if resp.status_code in (200, 201):
+                    return True
+                else:
+                    logger.error("Gmail send failed: %d %s", resp.status_code, resp.text[:200])
+                    return False
+        except Exception as exc:
+            logger.error("Gmail send error: %s", exc)
+            return False
 
 
 # ---------------------------------------------------------------------------
