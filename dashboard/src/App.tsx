@@ -160,8 +160,8 @@ const S = {
   btnPrimary: {
     padding: '10px 20px',
     borderRadius: 'var(--radius-sm)',
-    background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-    color: '#fff',
+    background: 'linear-gradient(135deg, #7DF9FF, #00CED1)',
+    color: '#0a0e1a',
     fontWeight: 600,
     fontSize: '13px',
     border: 'none',
@@ -170,7 +170,7 @@ const S = {
     alignItems: 'center',
     gap: '6px',
     transition: 'all 0.2s ease',
-    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.25)',
+    boxShadow: '0 2px 8px rgba(125, 249, 255, 0.25)',
   } as CSSProperties,
   btnGhost: {
     padding: '8px 14px',
@@ -283,24 +283,24 @@ function NavBar({
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{
           width: 34, height: 34, borderRadius: '10px',
-          background: 'linear-gradient(135deg, #7c3aed, #6d28d9, #7c3aed)',
+          background: 'linear-gradient(135deg, #7DF9FF, #00CED1, #7DF9FF)',
           backgroundSize: '200% 200%',
           animation: 'gradientBorder 4s ease infinite',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 700, fontSize: '16px',
-          boxShadow: '0 0 16px rgba(124, 58, 237, 0.3)',
+          boxShadow: '0 0 16px rgba(125, 249, 255, 0.3)',
         }}>
-          <span style={{ fontWeight: 800, fontSize: '13px', color: '#fff', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}>AX</span>
+          <span style={{ fontWeight: 800, fontSize: '13px', color: '#0a0e1a', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}>AX</span>
         </div>
         <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text)', letterSpacing: '-0.3px' }}>
           AssistantX
         </span>
         <div style={{
-          fontSize: '10px', fontWeight: 600, color: '#6d28d9',
-          background: 'rgba(124, 58, 237, 0.12)',
+          fontSize: '10px', fontWeight: 600, color: '#00CED1',
+          background: 'rgba(125, 249, 255, 0.12)',
           padding: '3px 10px', borderRadius: '10px',
           letterSpacing: '0.4px', textTransform: 'uppercase',
-          border: '1px solid rgba(124, 58, 237, 0.2)',
+          border: '1px solid rgba(125, 249, 255, 0.2)',
           animation: 'livePulse 3s ease-in-out infinite',
           display: 'flex', alignItems: 'center', gap: '5px',
         }}>
@@ -322,12 +322,12 @@ function NavBar({
           return (
             <button key={t.key} onClick={() => setScreen(t.key)} style={{
               padding: '7px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
-              background: isActive ? 'linear-gradient(135deg, #7c3aed, #6d28d9)' : 'transparent',
-              color: isActive ? '#fff' : '#c8d4e8',
+              background: isActive ? 'linear-gradient(135deg, #7DF9FF, #00CED1)' : 'transparent',
+              color: isActive ? '#0a0e1a' : '#c8d4e8',
               border: 'none', cursor: 'pointer',
               transition: 'all 0.2s ease',
               display: 'flex', alignItems: 'center', gap: '6px',
-              boxShadow: isActive ? '0 0 12px rgba(124, 58, 237, 0.4)' : 'none',
+              boxShadow: isActive ? '0 0 12px rgba(125, 249, 255, 0.4)' : 'none',
             }}>
               {t.icon}
               {t.label}
@@ -456,10 +456,10 @@ function ChatScreen({ instanceId }: { instanceId: string }) {
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                 background: m.role === 'user'
-                  ? 'linear-gradient(135deg, #6d28d9, #a78bfa)'
-                  : 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
+                  ? 'linear-gradient(135deg, #00CED1, #B0F4FF)'
+                  : 'linear-gradient(135deg, #7DF9FF, #6EF0F7)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 8px rgba(124, 58, 237, 0.25)',
+                boxShadow: '0 0 8px rgba(125, 249, 255, 0.25)',
               }}>
                 {m.role === 'user' ? <Sparkles size={14} color="#fff" /> : <Bot size={14} color="#fff" />}
               </div>
@@ -469,12 +469,12 @@ function ChatScreen({ instanceId }: { instanceId: string }) {
                   padding: '12px 16px', fontSize: '14px', lineHeight: '1.7',
                   borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                   background: m.role === 'user'
-                    ? 'linear-gradient(135deg, #7c3aed, #6d28d9)'
+                    ? 'linear-gradient(135deg, #7DF9FF, #00CED1)'
                     : 'var(--surface2)',
-                  color: m.role === 'user' ? '#fff' : 'var(--text)',
+                  color: m.role === 'user' ? '#0a0e1a' : 'var(--text)',
                   border: m.role === 'user' ? 'none' : '1px solid var(--border)',
                   boxShadow: m.role === 'user'
-                    ? '0 4px 16px rgba(124, 58, 237, 0.15)'
+                    ? '0 4px 16px rgba(125, 249, 255, 0.15)'
                     : 'var(--shadow-sm)',
                   position: 'relative',
                 }}>
@@ -524,9 +524,9 @@ function ChatScreen({ instanceId }: { instanceId: string }) {
             }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
+                background: 'linear-gradient(135deg, #7DF9FF, #6EF0F7)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 8px rgba(124, 58, 237, 0.25)',
+                boxShadow: '0 0 8px rgba(125, 249, 255, 0.25)',
               }}>
                 <Bot size={14} color="#fff" />
               </div>
@@ -558,7 +558,7 @@ function ChatScreen({ instanceId }: { instanceId: string }) {
           <div style={{
             flex: 1, position: 'relative',
             borderRadius: 'var(--radius-sm)',
-            boxShadow: inputFocused ? '0 0 0 2px rgba(124, 58, 237, 0.2), 0 0 16px rgba(124, 58, 237, 0.1)' : 'none',
+            boxShadow: inputFocused ? '0 0 0 2px rgba(125, 249, 255, 0.2), 0 0 16px rgba(125, 249, 255, 0.1)' : 'none',
             transition: 'box-shadow 0.25s ease',
           }}>
             <input
@@ -671,19 +671,19 @@ function ServicesScreen() {
         {/* Token Vault info banner */}
         <div style={{
           ...S.card, padding: '16px 20px', marginBottom: '24px',
-          background: 'rgba(124, 58, 237, 0.06)',
-          border: '1px solid rgba(124, 58, 237, 0.2)',
+          background: 'rgba(125, 249, 255, 0.06)',
+          border: '1px solid rgba(125, 249, 255, 0.2)',
           display: 'flex', alignItems: 'center', gap: '14px',
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-            background: 'rgba(124, 58, 237, 0.15)', border: '1px solid rgba(124, 58, 237, 0.3)',
+            background: 'rgba(125, 249, 255, 0.15)', border: '1px solid rgba(125, 249, 255, 0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Lock size={16} style={{ color: '#a78bfa' }} />
+            <Lock size={16} style={{ color: '#B0F4FF' }} />
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            <strong style={{ color: '#c4b5fd' }}>Auth0 Token Vault</strong> holds all third-party tokens.
+            <strong style={{ color: '#D0FAFF' }}>Auth0 Token Vault</strong> holds all third-party tokens.
             This app never sees raw credentials. Tokens are exchanged per-request and automatically expire.
           </div>
         </div>
@@ -705,7 +705,7 @@ function ServicesScreen() {
                   display: 'flex', alignItems: 'center', gap: '16px',
                   border: isConnected
                     ? '1px solid rgba(34, 197, 94, 0.2)'
-                    : isHovered ? '1px solid rgba(124, 58, 237, 0.3)' : '1px solid var(--border)',
+                    : isHovered ? '1px solid rgba(125, 249, 255, 0.3)' : '1px solid var(--border)',
                   boxShadow: isHovered ? 'var(--shadow)' : 'var(--shadow-sm)',
                   transition: 'all 0.2s ease',
                 }}
@@ -933,9 +933,9 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
               <div style={{
                 width: 40, height: 40, borderRadius: '12px',
-                background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                background: 'linear-gradient(135deg, #7DF9FF, #5CE6ED)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 20px rgba(124,58,237,0.4)',
+                boxShadow: '0 0 20px rgba(125,249,255,0.4)',
               }}>
                 <Shield size={18} color="#fff" />
               </div>
@@ -962,9 +962,9 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
 
         {/* Setup form */}
         {showSetup && (
-          <div style={{ ...S.card, padding: '24px', animation: 'fadeIn 0.2s ease-out', border: '1px solid rgba(124,58,237,0.3)' }}>
+          <div style={{ ...S.card, padding: '24px', animation: 'fadeIn 0.2s ease-out', border: '1px solid rgba(125,249,255,0.3)' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={15} style={{ color: '#a78bfa' }} /> Configure Dead-Man Switch
+              <AlertTriangle size={15} style={{ color: '#B0F4FF' }} /> Configure Dead-Man Switch
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               {[
@@ -987,7 +987,7 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleSetup} disabled={setupLoading} style={{ ...S.btnPrimary, background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
+              <button onClick={handleSetup} disabled={setupLoading} style={{ ...S.btnPrimary, background: 'linear-gradient(135deg, #7DF9FF, #5CE6ED)' }}>
                 {setupLoading ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
                 Arm Switch
               </button>
@@ -1134,8 +1134,8 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
               Auth0 Token Vault Connections
             </div>
             <div style={{
-              fontSize: '10px', background: 'rgba(124,58,237,0.15)', color: '#a78bfa',
-              border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '2px 8px', fontWeight: 600,
+              fontSize: '10px', background: 'rgba(125,249,255,0.15)', color: '#B0F4FF',
+              border: '1px solid rgba(125,249,255,0.3)', borderRadius: '10px', padding: '2px 8px', fontWeight: 600,
             }}>
               {vault.length} active
             </div>
@@ -1157,10 +1157,10 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
                 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
-                    background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+                    background: 'rgba(125,249,255,0.15)', border: '1px solid rgba(125,249,255,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Lock size={12} style={{ color: '#a78bfa' }} />
+                    <Lock size={12} style={{ color: '#B0F4FF' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', fontFamily: 'monospace' }}>{conn.connection}</div>
@@ -1210,26 +1210,26 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
         {/* Explanation */}
         <div style={{
           ...S.card, padding: '20px 24px',
-          background: 'rgba(124,58,237,0.05)',
-          border: '1px solid rgba(124,58,237,0.2)',
+          background: 'rgba(125,249,255,0.05)',
+          border: '1px solid rgba(125,249,255,0.2)',
           display: 'flex', alignItems: 'flex-start', gap: '16px',
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-            background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+            background: 'rgba(125,249,255,0.15)', border: '1px solid rgba(125,249,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Lock size={16} style={{ color: '#a78bfa' }} />
+            <Lock size={16} style={{ color: '#B0F4FF' }} />
           </div>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#c4b5fd', marginBottom: '4px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#D0FAFF', marginBottom: '4px' }}>
               How it works
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '800px' }}>
               Auth0 Token Vault holds all third-party credentials. When the Dead-Man Switch fires,
               it exchanges your Auth0 token for scoped API tokens (e.g. Google Drive write-once, 60 minutes).
               Data is encrypted and distributed to your trusted contacts. All tokens are then revoked.
-              <strong style={{ color: '#a78bfa' }}> You cannot surrender credentials you do not have.</strong>
+              <strong style={{ color: '#B0F4FF' }}> You cannot surrender credentials you do not have.</strong>
             </div>
           </div>
         </div>
@@ -1367,8 +1367,8 @@ function ActivityScreen() {
                       {ev.model_used && (
                         <span style={{
                           fontSize: '10px', padding: '2px 8px', borderRadius: '6px',
-                          background: 'rgba(124, 58, 237, 0.1)', color: '#6d28d9',
-                          border: '1px solid rgba(124, 58, 237, 0.15)',
+                          background: 'rgba(125, 249, 255, 0.1)', color: '#00CED1',
+                          border: '1px solid rgba(125, 249, 255, 0.15)',
                           fontWeight: 500,
                         }}>
                           {ev.model_used}
@@ -1547,19 +1547,19 @@ function PermissionsScreen() {
         {/* Token Vault info */}
         <div style={{
           ...S.card, padding: '20px 24px',
-          background: 'rgba(124,58,237,0.05)',
-          border: '1px solid rgba(124,58,237,0.2)',
+          background: 'rgba(125,249,255,0.05)',
+          border: '1px solid rgba(125,249,255,0.2)',
           display: 'flex', alignItems: 'flex-start', gap: '16px',
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-            background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+            background: 'rgba(125,249,255,0.15)', border: '1px solid rgba(125,249,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Eye size={16} style={{ color: '#a78bfa' }} />
+            <Eye size={16} style={{ color: '#B0F4FF' }} />
           </div>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#c4b5fd', marginBottom: '4px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#D0FAFF', marginBottom: '4px' }}>
               Credential Transparency
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.7' }}>
@@ -1610,7 +1610,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <div style={{
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      backgroundImage: 'radial-gradient(circle at 50% 40%, rgba(124, 58, 237, 0.08), transparent 60%)',
+      backgroundImage: 'radial-gradient(circle at 50% 40%, rgba(125, 249, 255, 0.08), transparent 60%)',
     }}>
       <form onSubmit={handleSubmit} style={{
         ...S.glass,
@@ -1621,11 +1621,11 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         <div style={{ textAlign: 'center' }}>
           <div style={{
             width: 56, height: 56, borderRadius: '16px',
-            background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+            background: 'linear-gradient(135deg, #7DF9FF, #00CED1)',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', fontWeight: 800, color: '#fff', marginBottom: '16px',
+            fontSize: '18px', fontWeight: 800, color: '#0a0e1a', marginBottom: '16px',
             letterSpacing: '-0.5px',
-            boxShadow: '0 0 24px rgba(124, 58, 237, 0.4)',
+            boxShadow: '0 0 24px rgba(125, 249, 255, 0.4)',
           }}>AX</div>
           <h2 style={{ margin: 0, color: '#fff', fontSize: '24px', fontWeight: 700 }}>AssistantX</h2>
           <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
