@@ -68,18 +68,32 @@ class SimpleRevokeRequest(BaseModel):
 DEFAULT_INSTANCE = "assistantx-default"
 
 
+def _resolve_instance_id(request) -> str:
+    """Resolve the actual instance UUID from the instance manager.
+    Falls back to DEFAULT_INSTANCE if no instances exist."""
+    try:
+        mgr = request.app.state.instance_manager
+        instances = list(mgr._instances.values())
+        if instances:
+            return instances[0].id
+    except Exception:
+        pass
+    return DEFAULT_INSTANCE
+
+
 # ---------------------------------------------------------------------------
 # Frontend-facing routes (no instance_id — use default instance)
 # ---------------------------------------------------------------------------
 
 @router.get("/connections")
-async def list_connections():
+async def list_connections(request: Request):
     """
     Return all connected services for the default instance.
     Response: { connections: [{ service_id, status, scopes, connection }] }
     """
     vault = get_vault()
-    raw = vault.list_connections(DEFAULT_INSTANCE)
+    instance_id = _resolve_instance_id(request)
+    raw = vault.list_connections(instance_id)
 
     # Build a service_id → connection mapping for connected services
     connected_connections = {}
@@ -107,7 +121,7 @@ async def list_connections():
 
 
 @router.post("/authorize")
-async def authorize_service_simple(body: AuthorizeRequest):
+async def authorize_service_simple(body: AuthorizeRequest, request: Request):
     """
     Authorize a new service for the default instance.
     Simplified endpoint for the single-instance frontend.
@@ -142,8 +156,9 @@ async def authorize_service_simple(body: AuthorizeRequest):
         }
 
     # Demo mode — issue a local scoped token
-    vault._demo_token(DEFAULT_INSTANCE, connection, scopes, ttl=int(body.ttl_hours * 3600))
-    logger.info("Demo-authorized service=%s connection=%s for default instance", service, connection)
+    instance_id = _resolve_instance_id(request)
+    vault._demo_token(instance_id, connection, scopes, ttl=int(body.ttl_hours * 3600))
+    logger.info("Demo-authorized service=%s connection=%s for instance=%s", service, connection, instance_id)
     return {
         "service": body.service,
         "connection": connection,
@@ -154,21 +169,22 @@ async def authorize_service_simple(body: AuthorizeRequest):
 
 
 @router.post("/revoke")
-async def revoke_service_simple(body: SimpleRevokeRequest):
+async def revoke_service_simple(body: SimpleRevokeRequest, request: Request):
     """
     Revoke a connected service for the default instance.
     Simplified endpoint — takes a service name instead of a raw connection scope.
     """
     vault = get_vault()
     service = body.service.lower()
+    instance_id = _resolve_instance_id(request)
 
     if service not in _SERVICE_MAP:
         raise HTTPException(status_code=400, detail=f"Unknown service '{body.service}'.")
 
     connection, _ = _SERVICE_MAP[service]
-    removed = vault.revoke_connection(DEFAULT_INSTANCE, connection)
+    removed = vault.revoke_connection(instance_id, connection)
 
-    logger.info("Revoked service=%s connection=%s for default instance (found=%s)", service, connection, removed)
+    logger.info("Revoked service=%s connection=%s for instance=%s (found=%s)", service, connection, instance_id, removed)
     return {"revoked": True, "service": body.service}
 
 
@@ -238,25 +254,26 @@ async def oauth_callback(request: Request):
         logger.error("Token exchange error: %s", exc)
         raise HTTPException(status_code=500, detail="Token exchange failed")
 
-    # Store the tokens in Token Vault for the default instance
+    # Store the tokens in Token Vault for the resolved instance
     vault = get_vault()
+    instance_id = _resolve_instance_id(request)
     access_token = token_data.get("access_token", "")
     refresh_token = token_data.get("refresh_token", "")
 
     if refresh_token:
-        vault.store_refresh_token(DEFAULT_INSTANCE, refresh_token)
+        vault.store_refresh_token(instance_id, refresh_token)
     if access_token:
-        vault.store_access_token(DEFAULT_INSTANCE, access_token)
+        vault.store_access_token(instance_id, access_token)
 
     # Record the authorized connection using state (service name)
     service = state.split(":")[0] if ":" in state else state  # handle "instance:service" or "service"
     if service and service in _SERVICE_MAP:
         connection, default_scopes = _SERVICE_MAP[service]
-        vault.mark_connection_authorized(DEFAULT_INSTANCE, connection, default_scopes)
+        vault.mark_connection_authorized(instance_id, connection, default_scopes)
 
     logger.info(
-        "OAuth callback: stored tokens for default instance (access=%s, refresh=%s, service=%s)",
-        bool(access_token), bool(refresh_token), service,
+        "OAuth callback: stored tokens for instance=%s (access=%s, refresh=%s, service=%s)",
+        instance_id, bool(access_token), bool(refresh_token), service,
     )
 
     # Return a self-closing page that signals the parent dashboard
@@ -275,14 +292,15 @@ async def oauth_callback(request: Request):
 
 
 @router.get("/status")
-async def vault_status():
+async def vault_status(request: Request):
     """
     Return the current Token Vault status — mode, Auth0 domain, active connections.
     Used by the dashboard to display real-time vault state.
     """
     vault = get_vault()
-    connections = vault.list_connections(DEFAULT_INSTANCE)
-    detector = get_detector(DEFAULT_INSTANCE)
+    instance_id = _resolve_instance_id(request)
+    connections = vault.list_connections(instance_id)
+    detector = get_detector(instance_id)
 
     return {
         "token_vault_mode": "auth0" if (AUTH0_DOMAIN and not vault.demo_mode) else "demo",
