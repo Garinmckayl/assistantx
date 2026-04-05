@@ -101,7 +101,7 @@ async def agntor_semantic_scan(content: str) -> dict:
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd="/root/assistantx",
+            cwd=os.getenv("AGNTOR_CWD", "/app"),
         )
         script = f"""
 import {{ guard }} from '@agntor/sdk';
@@ -129,7 +129,7 @@ async def agntor_pii_redact(content: str) -> dict:
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd="/root/assistantx",
+            cwd=os.getenv("AGNTOR_CWD", "/app"),
         )
         script = f"""
 import {{ redact }} from '@agntor/sdk';
