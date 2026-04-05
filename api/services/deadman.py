@@ -213,11 +213,12 @@ class DeadManSwitch:
 
     async def _monitor_loop(self) -> None:
         """
-        Background loop that checks for missed check-ins every 60 seconds.
+        Background loop that checks for missed check-ins.
+        Ticks every 10 seconds for responsive demo intervals.
         """
         while True:
             try:
-                await asyncio.sleep(60)
+                await asyncio.sleep(10)
                 await self._tick()
             except asyncio.CancelledError:
                 break

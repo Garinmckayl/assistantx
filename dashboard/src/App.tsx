@@ -794,8 +794,8 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
   const [countdown, setCountdown] = useState('');
 
   const [setupForm, setSetupForm] = useState({
-    checkin_interval_hours: 24,
-    grace_period_hours: 2,
+    checkin_interval_hours: 0.0167,
+    grace_period_hours: 0.0167,
     checkin_word: 'alive',
     contact_name: '',
     contact_email: '',
@@ -837,7 +837,9 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
       const h = Math.floor(diff / 3600);
       const m = Math.floor((diff % 3600) / 60);
       const s = Math.floor(diff % 60);
-      setCountdown(`${h}h ${m}m ${s}s`);
+      if (h > 0) setCountdown(`${h}h ${m}m ${s}s`);
+      else if (m > 0) setCountdown(`${m}m ${s}s`);
+      else setCountdown(`${s}s`);
     };
     tick();
     const iv = setInterval(tick, 1000);
@@ -967,9 +969,37 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
               <AlertTriangle size={15} style={{ color: '#B0F4FF' }} /> Configure Dead-Man Switch
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={S.label}>Check-in Interval</label>
+                <select
+                  value={setupForm.checkin_interval_hours}
+                  onChange={e => setSetupForm(prev => ({ ...prev, checkin_interval_hours: Number(e.target.value) }))}
+                  style={{ ...S.input, cursor: 'pointer' }}
+                >
+                  <option value={0.0167}>1 minute (demo)</option>
+                  <option value={0.0833}>5 minutes (demo)</option>
+                  <option value={1}>1 hour</option>
+                  <option value={6}>6 hours</option>
+                  <option value={12}>12 hours</option>
+                  <option value={24}>24 hours</option>
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>Grace Period</label>
+                <select
+                  value={setupForm.grace_period_hours}
+                  onChange={e => setSetupForm(prev => ({ ...prev, grace_period_hours: Number(e.target.value) }))}
+                  style={{ ...S.input, cursor: 'pointer' }}
+                >
+                  <option value={0.0167}>1 minute (demo)</option>
+                  <option value={0.0833}>5 minutes (demo)</option>
+                  <option value={0.5}>30 minutes</option>
+                  <option value={1}>1 hour</option>
+                  <option value={2}>2 hours</option>
+                  <option value={6}>6 hours</option>
+                </select>
+              </div>
               {[
-                { label: 'Check-in Interval (hours)', key: 'checkin_interval_hours', type: 'number' },
-                { label: 'Grace Period (hours)', key: 'grace_period_hours', type: 'number' },
                 { label: 'Check-in Word', key: 'checkin_word', type: 'text' },
                 { label: 'Trusted Contact Email', key: 'contact_email', type: 'email' },
                 { label: 'Contact Name', key: 'contact_name', type: 'text' },
@@ -980,7 +1010,7 @@ function SafetyScreen({ instanceId }: { instanceId: string }) {
                   <input
                     type={f.type}
                     value={(setupForm as any)[f.key]}
-                    onChange={e => setSetupForm(prev => ({ ...prev, [f.key]: f.type === 'number' ? Number(e.target.value) : e.target.value }))}
+                    onChange={e => setSetupForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                     style={S.input}
                   />
                 </div>
