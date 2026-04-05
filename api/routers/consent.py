@@ -81,6 +81,31 @@ def _resolve_instance_id(request) -> str:
     return DEFAULT_INSTANCE
 
 
+async def _get_management_token() -> Optional[str]:
+    """Get an Auth0 Management API token via client_credentials grant."""
+    domain = os.getenv("AUTH0_DOMAIN", "")
+    client_id = os.getenv("AUTH0_CLIENT_ID", "")
+    client_secret = os.getenv("AUTH0_CLIENT_SECRET", "")
+    if not all([domain, client_id, client_secret]):
+        return None
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"https://{domain}/oauth/token",
+                json={
+                    "grant_type": "client_credentials",
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "audience": f"https://{domain}/api/v2/",
+                },
+            )
+            if resp.status_code == 200:
+                return resp.json().get("access_token")
+    except Exception as exc:
+        logger.warning("Failed to get management token: %s", exc)
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Frontend-facing routes (no instance_id — use default instance)
 # ---------------------------------------------------------------------------
@@ -270,6 +295,45 @@ async def oauth_callback(request: Request):
     if service and service in _SERVICE_MAP:
         connection, default_scopes = _SERVICE_MAP[service]
         vault.mark_connection_authorized(instance_id, connection, default_scopes)
+
+    # Fetch Google provider token via Auth0 Management API
+    # The /userinfo endpoint returns the IDP access token when available
+    if access_token and service in ("gmail", "drive", "calendar"):
+        try:
+            mgmt_token = await _get_management_token()
+            if mgmt_token:
+                # Get user info to find user_id
+                async with httpx.AsyncClient() as client:
+                    userinfo = await client.get(
+                        f"https://{AUTH0_DOMAIN}/userinfo",
+                        headers={"Authorization": f"Bearer {access_token}"},
+                    )
+                    if userinfo.status_code == 200:
+                        user_id = userinfo.json().get("sub", "")
+                        if user_id:
+                            # Fetch user identity with IDP tokens
+                            user_resp = await client.get(
+                                f"https://{AUTH0_DOMAIN}/api/v2/users/{user_id}",
+                                headers={"Authorization": f"Bearer {mgmt_token}"},
+                            )
+                            if user_resp.status_code == 200:
+                                user_data = user_resp.json()
+                                for identity in user_data.get("identities", []):
+                                    if identity.get("provider") == "google-oauth2":
+                                        google_at = identity.get("access_token", "")
+                                        google_rt = identity.get("refresh_token", "")
+                                        if google_at:
+                                            vault.store_google_provider_token(
+                                                instance_id, google_at, google_rt
+                                            )
+                                            logger.info(
+                                                "Stored Google provider token from identity "
+                                                "(access=%s, refresh=%s)",
+                                                bool(google_at), bool(google_rt),
+                                            )
+                                        break
+        except Exception as exc:
+            logger.warning("Could not fetch Google provider token: %s", exc)
 
     logger.info(
         "OAuth callback: stored tokens for instance=%s (access=%s, refresh=%s, service=%s)",

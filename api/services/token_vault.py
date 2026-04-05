@@ -108,6 +108,10 @@ class TokenVaultClient:
         # OpenClaw API credentials (stored until first use)
         self._openclaw_creds: Dict[str, Dict[str, str]] = {}
 
+        # Google provider tokens (stored from OAuth callback for direct API access)
+        # instance_id -> { access_token, refresh_token }
+        self._google_tokens: Dict[str, Dict[str, str]] = {}
+
         if self.demo_mode:
             logger.warning(
                 "Token Vault: DEMO MODE — set AUTH0_DOMAIN, AUTH0_CLIENT_ID, "
@@ -304,6 +308,21 @@ class TokenVaultClient:
             )
             return None
 
+    def store_google_provider_token(self, instance_id: str, access_token: str, refresh_token: str = "") -> None:
+        """Store Google provider tokens obtained from OAuth for direct API access."""
+        self._google_tokens[instance_id] = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+        logger.info("Stored Google provider token for instance=%s", instance_id)
+
+    def _get_google_provider_token(self, instance_id: str) -> Optional[str]:
+        """Get stored Google provider access token as fallback."""
+        entry = self._google_tokens.get(instance_id)
+        if entry and entry.get("access_token"):
+            return entry["access_token"]
+        return None
+
     # ------------------------------------------------------------------
     # Convenience methods for Dead-Man Switch
     # ------------------------------------------------------------------
@@ -316,6 +335,11 @@ class TokenVaultClient:
             ConnectionScope.GOOGLE_DRIVE_SCOPES,
             trigger="deadman",
         )
+        if not token:
+            # Fallback: use stored Google provider token directly
+            token = self._get_google_provider_token(instance_id)
+            if token:
+                logger.info("Using Google provider token fallback for Drive (instance=%s)", instance_id)
         return token
 
     async def get_gmail_token(self, instance_id: str) -> Optional[str]:
@@ -326,6 +350,11 @@ class TokenVaultClient:
             ConnectionScope.GMAIL_SCOPES,
             trigger="deadman",
         )
+        if not token:
+            # Fallback: use stored Google provider token directly
+            token = self._get_google_provider_token(instance_id)
+            if token:
+                logger.info("Using Google provider token fallback for Gmail (instance=%s)", instance_id)
         return token
 
     # ------------------------------------------------------------------
@@ -406,6 +435,9 @@ class TokenVaultClient:
             count += 1
         if instance_id in self._authorized:
             count += len(self._authorized.pop(instance_id))
+        if instance_id in self._google_tokens:
+            del self._google_tokens[instance_id]
+            count += 1
         logger.info("Revoked %d token(s)/credential(s) for instance=%s", count, instance_id)
         return count
 
