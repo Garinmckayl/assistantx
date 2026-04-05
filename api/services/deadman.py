@@ -363,22 +363,31 @@ class DeadManSwitch:
         })
 
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
+            import base64 as _b64
+            async with httpx.AsyncClient(timeout=30) as client:
+                # Use simple upload with metadata
                 resp = await client.post(
                     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
                     headers={
                         "Authorization": f"Bearer {token}",
-                        "Content-Type": "multipart/related; boundary=boundary",
                     },
-                    content=(
-                        b"--boundary\r\nContent-Type: application/json\r\n\r\n" +
-                        metadata.encode() +
-                        b"\r\n--boundary\r\nContent-Type: application/octet-stream\r\n\r\n" +
-                        encrypted_payload +
-                        b"\r\n--boundary--"
-                    ),
+                    files={
+                        "metadata": ("metadata.json", metadata.encode(), "application/json"),
+                        "file": (
+                            f"assistantx-deadman-{time.strftime('%Y%m%d-%H%M%S')}.enc",
+                            encrypted_payload,
+                            "application/octet-stream",
+                        ),
+                    },
                 )
-                return resp.status_code in (200, 201)
+                if resp.status_code in (200, 201):
+                    return True
+                else:
+                    logger.error(
+                        "Google Drive upload failed: %d %s",
+                        resp.status_code, resp.text[:300],
+                    )
+                    return False
         except Exception as exc:
             logger.error("Google Drive push failed: %s", exc)
             return False
