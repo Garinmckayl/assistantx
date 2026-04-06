@@ -22,17 +22,17 @@ https://github.com/Garinmckayl/assistantx
 
 ### Inspiration
 
-In 2022, security forces in Ethiopia arrested over 4,000 people in the Amhara region alone. Journalists. Activists. Human rights lawyers. Many were held in military camps for months — some for over a year — without formal charges. Their crime? Covering a conflict the government wanted invisible.
+Ethiopia is ranked 150th out of 180 countries for press freedom. Journalists are jailed for covering stories the government doesn't want told. Activists are tortured for organizing. People are killed. Not occasionally — routinely. I'm building this from Addis Ababa. This is not something I read about. This is the world outside my window.
 
-I know what happens next, because I'm building this from Addis Ababa.
+Here is how it works. A corrupt government wants to silence someone. They arrest them. They take their device. And on that device they find everything — emails, contacts, sources, credentials, every conversation with every person who trusted them enough to talk. One seized laptop doesn't just destroy one life. It destroys everyone connected to it. Sources disappear. Families are interrogated. Lawyers are charged. **People die — not because of what they did, but because their name was in someone else's inbox.**
 
-When they detain someone, the first thing seized is always the device. And on that device is everything: Gmail credentials, OAuth tokens in the browser, API keys in config files, contacts, sources, drafts, every conversation with every person who trusted them enough to talk. One laptop becomes a map of an entire network. People who had nothing to do with the story get pulled in. Families get interrogated. Sources disappear.
+The device is the weapon. The credentials are the ammunition.
 
-This isn't unique to Ethiopia. The Committee to Protect Journalists documented 361 journalists imprisoned worldwide in 2024. Reporters Without Borders ranks us 145th out of 180 for press freedom. But the pattern is always the same everywhere: the credentials were on the device, so the credentials were taken.
+In 2022 alone, over 4,000 people were arrested in the Amhara region. The Committee to Protect Journalists documented 361 journalists imprisoned worldwide in 2024. But the numbers don't capture it. Behind every arrest is a seized device. Behind every seized device is an entire network of people who are now exposed. Lives ruined. Families destroyed. People killed.
 
-I kept thinking: every AI assistant makes this worse. OpenClaw — 348,000 stars on GitHub, backed by OpenAI, NVIDIA, GitHub — connects to your email, your files, your Slack, your calendar. It's the most powerful personal AI ever built. But for a journalist in Addis Ababa, every service it connects to is another credential on the device. Another token someone can extract. Another person who gets exposed.
+Every AI assistant makes this worse. OpenClaw — 348,000 stars on GitHub, backed by OpenAI, NVIDIA, GitHub — connects to your email, your files, your Slack, your calendar. It's the most powerful personal AI ever built. But for a journalist in Addis Ababa, every service it connects to is another credential that can be used to destroy someone's life.
 
-**What if the credentials weren't there at all? Not encrypted. Not hidden. Gone.**
+**What if there was no ammunition? What if the credentials simply did not exist on the device?**
 
 That's why I built AssistantX.
 
@@ -54,7 +54,7 @@ It encrypts your pre-staged documents with Fernet symmetric encryption. It uploa
 
 And then it calls `revoke_all()`. Every token in the vault. Every connection. Burned.
 
-Your documents reached the people who need them. Your credentials no longer exist anywhere. The device was already clean. **Whoever took it is holding a brick.**
+Your story reaches the people who can tell it. Your sources stay protected. Your credentials no longer exist anywhere. **The device is useless. The weapon has no ammunition. No one else gets hurt.**
 
 **Dual-layer guardrails** scan every message — inbound and outbound — through `@agntor/sdk` regex heuristics (5ms) and Llama 3.3 70B deep classification (200ms). Prompt injection attempts are blocked before the model ever sees them. Sensitive information in responses is redacted before the user ever sees it. Every decision shows a live verdict badge: PASS, BLOCK, or REDACT.
 
@@ -93,11 +93,13 @@ Token Vault isn't a feature of AssistantX. It's the reason AssistantX can exist.
 
 I didn't build this for a hackathon.
 
-I built it because people I know have had their devices seized. Because the evidence used to charge them came from their own laptops — their own tokens, their own credentials, their own contact lists. Because one confiscated device can expose an entire network of sources, lawyers, and family members who had nothing to do with the story.
+I built it because in my country, a seized laptop doesn't just end a career. It ends lives. A journalist's contact list becomes a target list. A lawyer's case files become evidence against their own clients. An activist's group chat becomes a list of people to arrest next. The credentials on the device aren't just data — they're the weapon used to destroy everyone in that person's network.
 
-Over 4,000 people arrested in one crackdown. Every device seized. Every credential extracted. Their contacts, their sources, their entire network — pulled from a laptop.
+Journalists get jailed. Activists get tortured. Sources get killed. Not because of what they did — but because their name was on someone else's device.
 
-AssistantX can't stop someone from being detained. But it can make sure their AI assistant — the tool that knows the most about them — has nothing to give up.
+AssistantX won't stop someone from being arrested. But it will make sure their AI assistant — the tool that knows the most about them — has absolutely nothing to give up. No credentials to extract. No contacts to expose. No ammunition.
+
+With Auth0 Token Vault, the device is just a screen. The vault holds everything. And when the worst happens, it burns everything.
 
 **You cannot surrender what you do not have.**
 

@@ -193,34 +193,36 @@ TOTAL: ~3:05
 
 ## FULL NARRATION (copy-paste for TTS)
 
-In 2022, Ethiopian security forces arrested over four thousand people in the Amhara region. Journalists. Activists. Human rights lawyers. Many were held in military camps for months without charges. I'm building this from Addis Ababa. I watched this happen. Not on the news. Around me.
+Ethiopia is ranked 150th out of 180 countries for press freedom. Journalists are jailed for covering stories the government doesn't want told. Activists are tortured for organizing. People are killed. Not occasionally. Routinely. I'm building this from Addis Ababa. This is not something I read about. This is the world outside my window.
 
-When they take someone, the first thing seized is always the device. And on that device is everything. Gmail credentials. OAuth tokens. API keys. Contacts. Sources. Drafts. Every conversation with every person who trusted them enough to talk. One laptop becomes a map of an entire network. People who had nothing to do with the story get pulled in.
+Here is how it works. A corrupt government wants to silence someone. They arrest them. They take their device. And on that device they find everything — emails, contacts, sources, credentials, every conversation with every person who trusted them enough to talk. One seized laptop doesn't just destroy one life. It destroys everyone connected to it. Sources disappear. Families are interrogated. Lawyers are charged. People die — not because of what they did, but because their name was in someone else's inbox.
 
-I kept thinking — what if the credentials just weren't there? Not encrypted. Not hidden. Not there at all.
+The device is the weapon. The credentials are the ammunition.
 
-OpenClaw is the most powerful AI assistant ever built. Three hundred forty-eight thousand stars on GitHub. Backed by OpenAI, NVIDIA, GitHub. It connects to your email, your files, your Slack, your calendar. But for a journalist here, every service it connects to is another credential on the device. Another token someone can extract. Another person who gets exposed.
+I kept thinking — what if there was no ammunition? What if the credentials simply did not exist on the device? Not encrypted. Not hidden. Gone.
 
-AssistantX is built on top of OpenClaw. Same power. But every credential lives in Auth0 Token Vault. Not on this server. Not on this device. Nowhere an attacker can reach. You log in with one password. That's it.
+OpenClaw is the most powerful AI assistant ever built. Three hundred forty-eight thousand stars on GitHub. It connects to your email, your files, your Slack, your calendar. But for a journalist in Addis Ababa, every connection is another credential that can be used to destroy someone's life.
+
+AssistantX is built on top of OpenClaw. Same power. But every credential lives in Auth0 Token Vault. Not on the server. Not on the device. Nowhere anyone can reach it. You log in with one password. That's it.
 
 Your Gmail is connected. Your Google Drive is connected. But those tokens don't live here. When the assistant needs to send an email, it asks Auth0 for a token that lasts minutes. One use. Then gone.
 
-So when the police come — and they do come — they take your laptop. They image the drive. They search every file, every database, every cookie. And they find nothing. Because there is nothing to find.
+So when they come for you — and they do come — they take your laptop. They image the drive. They search everything. And they find nothing. No credentials. No tokens. No way to reach your sources, your contacts, your network. The weapon has no ammunition.
 
-But AssistantX doesn't just protect you while you're free. It protects you after you're taken.
+But AssistantX doesn't just protect you while you're free. It protects the people who depend on you after you're taken.
 
-The Dead-Man Switch. You set a check-in interval. If you miss it — because you've been detained, because your phone was confiscated, because you can't reach a screen — the grace period starts. And if that expires...
+The Dead-Man Switch. You set a check-in interval. If you miss it — because you've been detained, because you're in a cell, because you can't reach a screen — the grace period starts. And if that expires...
 
 The agent wakes up. On its own. Without you.
 
-It encrypts your documents. Uploads them to Google Drive — using a token from Auth0 Token Vault that you never saw. Emails your lawyer, your editor, your family — using a Gmail token from the vault. And then it calls revoke all. Every token. Every connection. Burned. The vault is empty. The device was already clean.
+It encrypts your documents. Uploads them to Google Drive using a token from Auth0 Token Vault. Emails your lawyer, your editor, your family using a Gmail token from the vault. And then it calls revoke all. Every token. Every connection. Burned. The vault is empty. The device was already clean.
 
-Your documents reached the people who need them. Your credentials no longer exist anywhere. And whoever took your device is holding a brick.
+Your story reaches the people who can tell it. Your sources stay protected. And whoever took your device has nothing.
 
-Every message passes through a guardrail. Prompt injection attacks are blocked in five milliseconds. Sensitive information is redacted before anyone sees it. Every decision is logged. Full audit trail. Because trust isn't a feeling. It's a record.
+Every message passes through a dual-layer guardrail. Prompt injection attacks are blocked in five milliseconds. Sensitive information is redacted before anyone sees it. Every decision is logged. Because trust isn't a feeling. It's a record.
 
-I didn't build this for a hackathon. I built it because people I know have had their devices seized. Because the evidence used to charge them came from their own laptops. Their own tokens. Their own credentials. One confiscated device exposed an entire network of sources, lawyers, and family members who had nothing to do with the story.
+I didn't build this for a hackathon. I built it because in my country, a seized laptop doesn't just end a career. It ends lives. It exposes every person who ever trusted you. Auth0 Token Vault made it possible to build an AI assistant where there is nothing to extract. No tokens on disk. No secrets in memory. No credentials anywhere. Just a vault that answers the right request at the right time — and burns everything when the time is up.
 
-Auth0 Token Vault made it possible to build an AI assistant where there is nothing to give up. No tokens on disk. No secrets in memory. No credentials in the browser. Just a vault that answers the right request at the right time — and burns everything when the time is up.
+AssistantX won't stop someone from being arrested. But it will make sure their tool — the thing that knows the most about them — has absolutely nothing to give up.
 
 You cannot surrender what you do not have.
