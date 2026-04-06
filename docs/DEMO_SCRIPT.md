@@ -193,32 +193,34 @@ TOTAL: ~3:05
 
 ## FULL NARRATION (copy-paste for TTS)
 
-I'm building this from Addis Ababa. Thousands of people are in detention here — journalists, activists, lawyers — many held for months in military camps without charge. The government doesn't distinguish between covering a conflict and promoting terrorism. And when they take you, they take your device. Your emails, your sources, your contacts, your credentials — all of it, sitting right there on the laptop. So all of it is gone. Not just yours. Everyone you've ever communicated with.
+In 2022, Ethiopian security forces arrested over four thousand people in the Amhara region. Journalists. Activists. Human rights lawyers. Many were held in military camps for months without charges. I'm building this from Addis Ababa. I watched this happen. Not on the news. Around me.
 
-AssistantX exists because I watched this happen. Not on the news — around me. And I kept thinking: what if the credentials just weren't there? Not encrypted. Not hidden. Not there at all.
+When they take someone, the first thing seized is always the device. And on that device is everything. Gmail credentials. OAuth tokens. API keys. Contacts. Sources. Drafts. Every conversation with every person who trusted them enough to talk. One laptop becomes a map of an entire network. People who had nothing to do with the story get pulled in.
 
-OpenClaw is the most popular open-source AI assistant in the world right now — 348,000 stars on GitHub, backed by OpenAI, NVIDIA, and GitHub themselves. It connects to your email, your files, your calendar, your Slack — everything. It's incredibly powerful. But if you're a journalist in Addis Ababa, that power is a liability. Because every service OpenClaw connects to is another credential on your device. Another token for someone to extract.
+I kept thinking — what if the credentials just weren't there? Not encrypted. Not hidden. Not there at all.
 
-AssistantX is built on top of OpenClaw. It gives you all that power — but it moves every credential off the device and into Auth0 Token Vault. You log in with one password. That's it. No API keys. No OAuth tokens saved anywhere. Nothing.
+OpenClaw is the most powerful AI assistant ever built. Three hundred forty-eight thousand stars on GitHub. Backed by OpenAI, NVIDIA, GitHub. It connects to your email, your files, your Slack, your calendar. But for a journalist here, every service it connects to is another credential on the device. Another token someone can extract. Another person who gets exposed.
 
-Your Gmail is connected. Your Google Drive is connected. But here's the thing — those tokens don't live here. They live in Auth0 Token Vault. This server has never seen them. This device has never stored them. When the assistant needs to send an email on your behalf, it asks Auth0 for a token that lasts minutes, uses it once, and it's gone.
+AssistantX is built on top of OpenClaw. Same power. But every credential lives in Auth0 Token Vault. Not on this server. Not on this device. Nowhere an attacker can reach. You log in with one password. That's it.
 
-So when the police come — and they do come — they take your laptop. They image the drive. They search every file, every database, every cookie. And they find nothing. Because there's nothing to find.
+Your Gmail is connected. Your Google Drive is connected. But those tokens don't live here. When the assistant needs to send an email, it asks Auth0 for a token that lasts minutes. One use. Then gone.
 
-And while you're using it, every message — in and out — passes through a guardrail. If someone tries to trick the AI into leaking your sources, it gets blocked. If the AI accidentally includes something sensitive in a response, it gets redacted. You see a badge on every message — pass, block, or redact. You always know.
+So when the police come — and they do come — they take your laptop. They image the drive. They search every file, every database, every cookie. And they find nothing. Because there is nothing to find.
 
-But here's where it gets real. The Dead-Man Switch.
+But AssistantX doesn't just protect you while you're free. It protects you after you're taken.
 
-You set a check-in interval. Every twelve hours, every twenty-four hours — whatever you choose. If you miss a check-in — because you've been detained, because your phone was taken, because you can't get to a screen — the grace period starts. And if that expires too...
+The Dead-Man Switch. You set a check-in interval. If you miss it — because you've been detained, because your phone was confiscated, because you can't reach a screen — the grace period starts. And if that expires...
 
-The agent wakes up. On its own. It takes your pre-staged documents, encrypts them, uploads them to Google Drive — using a token from Auth0 Token Vault. It emails your trusted contacts — your lawyer, your editor, your family — using a Gmail token from the vault. And then it calls revoke-all. Every token. Every connection. Burned. The vault is empty. The device was already clean.
+The agent wakes up. On its own. Without you.
+
+It encrypts your documents. Uploads them to Google Drive — using a token from Auth0 Token Vault that you never saw. Emails your lawyer, your editor, your family — using a Gmail token from the vault. And then it calls revoke all. Every token. Every connection. Burned. The vault is empty. The device was already clean.
 
 Your documents reached the people who need them. Your credentials no longer exist anywhere. And whoever took your device is holding a brick.
 
-Everything is logged. Every guardrail decision, every token exchange, every Dead-Man Switch event. Full audit trail. Because trust isn't a feeling — it's a record.
+Every message passes through a guardrail. Prompt injection attacks are blocked in five milliseconds. Sensitive information is redacted before anyone sees it. Every decision is logged. Full audit trail. Because trust isn't a feeling. It's a record.
 
-And the user stays in control. One screen. Every service the agent can access. One click to revoke. Even the Dead-Man Switch can be re-armed — but only with step-up authorization from a trusted contact. Not the user. Because if the user is compromised, the user's authorization means nothing.
+I didn't build this for a hackathon. I built it because people I know have had their devices seized. Because the evidence used to charge them came from their own laptops. Their own tokens. Their own credentials. One confiscated device exposed an entire network of sources, lawyers, and family members who had nothing to do with the story.
 
-I didn't build this for a hackathon. I built it because thousands of people in my country are in detention right now — journalists, activists, lawyers — and the evidence used against many of them came from their own devices. Their own tokens. Their own credentials. Their contacts, their sources, their entire network — extracted from a laptop. OpenClaw is the best AI assistant ever built. But without a security layer, it's the best evidence collection tool ever built too. Auth0 Token Vault made it possible to give people OpenClaw's power with none of the risk. No tokens on disk. No secrets in memory. No credentials in the browser. Just a vault that answers the right request at the right time — and burns everything when the time is up.
+Auth0 Token Vault made it possible to build an AI assistant where there is nothing to give up. No tokens on disk. No secrets in memory. No credentials in the browser. Just a vault that answers the right request at the right time — and burns everything when the time is up.
 
 You cannot surrender what you do not have.
